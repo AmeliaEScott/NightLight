@@ -31,6 +31,9 @@ Neopixel::FloatRGB Neopixel::hsv2rgb(Neopixel::FloatHSV in)
     long        i;
     Neopixel::FloatRGB out;
     in.h = fmod(in.h, 360.0f);
+    if(in.h < 0.0f){
+        in.h += 360.0f;
+    }
 
     if(in.s <= 0.001f) {
         out.r = in.v;

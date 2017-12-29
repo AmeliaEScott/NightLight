@@ -3,6 +3,7 @@
 #include "Animation.h"
 #include "Rainbow.h"
 #include "Static.h"
+#include "Stars.h"
 
 #define LED_PIN 6
 #define COLUMNS 18
@@ -12,10 +13,18 @@
 #define ENCODER_PIN_2 3
 #define BUTTON_PIN 12
 
+// Maximum amount of time between double-clicks
 #define CLICK_DELAY 700
+// Duration of button press to make it a long-press
 #define LONG_PRESS_TIME 900
+// All button presses shorter than this amount of time are ignored, since I
+// was too lazy to add a capacitor to the physical circuit
+#define DEBOUNCE_TIME 10
 
+// Maximum brightness of the entire device, out of 255
+// (This is needed because I made some wires too thin, so they can't handle much current)
 #define MAX_BRIGHTNESS 100
+// Adjusts how much the brightness changes with each click of the dial
 #define BRIGHTNESS_SCALING 0.15f
 
 Neopixel strip = Neopixel(ROWS, COLUMNS, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -39,11 +48,16 @@ float deltaTime;
 long lastButtonDown = 0;
 // Last time the button was released, in milliseconds
 long lastButtonUp = 0;
-// True iff the button is currently pressed
+// True iff the button is currently pressed (After accounting for debouncing)
 bool buttonPressed = false;
+// True iff the button is pressed (Before accounting for debouncing)
+bool buttonSignal = false;
 // Number of times the button has been pressed
 uint8_t buttonPressCount = 0;
 
+// Boy, this is a lot of global variables, huh?
+// I guess this is what happens when I procrastinate and don't give myself
+// enough time to do things properly.
 volatile int8_t lastEncoderState = 0;
 volatile int8_t currentEncoderState = 0;
 volatile int8_t encoderPosition = 0;
@@ -54,20 +68,20 @@ State state = idle;
 // Overall brightness of the lights, 0-255
 float brightness = 10.0f;
 
+// Here, the animations are being set up. Is there a better way to do this? Probably
 Rainbow rainbow = Rainbow(ROWS, COLUMNS, &strip);
 Static staticLight = Static(ROWS, COLUMNS, &strip);
-#define NUM_ANIMATIONS 2
+Stars stars = Stars(ROWS, COLUMNS, &strip);
+#define NUM_ANIMATIONS 3
 int currentAnimation = 0;
-Animation* animations[NUM_ANIMATIONS] = {&rainbow, &staticLight};
+Animation* animations[NUM_ANIMATIONS] = {&rainbow, &staticLight, &stars};
 
 
 void setup() {
     pinMode(ENCODER_PIN_1, INPUT_PULLUP);
     pinMode(ENCODER_PIN_2, INPUT_PULLUP);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-
-    Serial.begin(9600);
-
+    
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_1), pollEncoder, CHANGE);
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_2), pollEncoder, CHANGE);
     
@@ -75,6 +89,8 @@ void setup() {
     strip.show();
 }
 
+// The two pins of the rotary encoder output numbers in gray code.
+// This function just converts that to a regular ol' number.
 int8_t encoderToNumber(int8_t pin1, int8_t pin2){
     int8_t result = pin2 << 1;
     result += (pin2 ^ pin1);
@@ -106,22 +122,18 @@ void loop() {
     lastTime = currentTime;
 
     bool buttonWasPressed = buttonPressed;
-    buttonPressed = digitalRead(BUTTON_PIN) == LOW;
-    if(buttonPressed && !buttonWasPressed){
+    buttonSignal = digitalRead(BUTTON_PIN) == LOW;
+    if(buttonSignal && !buttonWasPressed && currentTime - lastButtonUp > DEBOUNCE_TIME){
+        buttonPressed = true;
         lastButtonDown = currentTime;
-        Serial.print("Button was pressed at ");
-        Serial.println(lastButtonDown);
-    }else if(!buttonPressed && buttonWasPressed){
+    }else if(!buttonSignal && buttonWasPressed && currentTime - lastButtonDown > DEBOUNCE_TIME){
+        buttonPressed = false;
         lastButtonUp = currentTime;
-        Serial.print("Button was released at ");
-        Serial.println(lastButtonUp);
     }
     
     if(state == idle){
         if(buttonPressed){
             state = waitingForButtonRelease;
-            Serial.print("Button was pressed from idle, at ");
-            Serial.println(lastButtonDown);
         }else if(encoderClick != 0){
             turnDial();
         }
