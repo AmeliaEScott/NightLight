@@ -2,7 +2,6 @@
 #include "Neopixel.h"
 #include "Animation.h"
 #include "Rainbow.h"
-#include "Wave.h"
 #include "Static.h"
 
 #define LED_PIN 6
@@ -14,7 +13,10 @@
 #define BUTTON_PIN 12
 
 #define CLICK_DELAY 700
-#define LONG_PRESS_TIME 1000
+#define LONG_PRESS_TIME 900
+
+#define MAX_BRIGHTNESS 100
+#define BRIGHTNESS_SCALING 0.15f
 
 Neopixel strip = Neopixel(ROWS, COLUMNS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -27,16 +29,16 @@ enum State {
 };
 
 // Last time the loop() function ran, in milliseconds
-unsigned long lastTime;
+long lastTime;
 // The time at the start of the current loop()
-unsigned long currentTime;
+long currentTime;
 // Time difference between then and now, in seconds
 float deltaTime;
 
 // Last time the button was pressed down, in milliseconds
-int lastButtonDown = 0;
+long lastButtonDown = 0;
 // Last time the button was released, in milliseconds
-int lastButtonUp = 0;
+long lastButtonUp = 0;
 // True iff the button is currently pressed
 bool buttonPressed = false;
 // Number of times the button has been pressed
@@ -50,14 +52,13 @@ volatile int8_t encoderClick = 0;
 State state = idle;
 
 // Overall brightness of the lights, 0-255
-int brightness = 10;
+float brightness = 10.0f;
 
 Rainbow rainbow = Rainbow(ROWS, COLUMNS, &strip);
-Wave wave = Wave(ROWS, COLUMNS, &strip);
 Static staticLight = Static(ROWS, COLUMNS, &strip);
-#define NUM_ANIMATIONS 3
+#define NUM_ANIMATIONS 2
 int currentAnimation = 0;
-Animation* animations[NUM_ANIMATIONS] = {&rainbow, &wave, &staticLight};
+Animation* animations[NUM_ANIMATIONS] = {&rainbow, &staticLight};
 
 
 void setup() {
@@ -108,13 +109,19 @@ void loop() {
     buttonPressed = digitalRead(BUTTON_PIN) == LOW;
     if(buttonPressed && !buttonWasPressed){
         lastButtonDown = currentTime;
+        Serial.print("Button was pressed at ");
+        Serial.println(lastButtonDown);
     }else if(!buttonPressed && buttonWasPressed){
         lastButtonUp = currentTime;
+        Serial.print("Button was released at ");
+        Serial.println(lastButtonUp);
     }
     
     if(state == idle){
         if(buttonPressed){
             state = waitingForButtonRelease;
+            Serial.print("Button was pressed from idle, at ");
+            Serial.println(lastButtonDown);
         }else if(encoderClick != 0){
             turnDial();
         }
@@ -162,7 +169,7 @@ void loop() {
     encoderClick = 0;
     
     animations[currentAnimation]->animate(currentTime / 1000.0f, deltaTime);
-    strip.setBrightness(brightness);
+    strip.setBrightness((int) brightness);
     strip.show();
 }
 
@@ -170,11 +177,11 @@ void turnDial(){
     if(state == turningDialPressed){
         animations[currentAnimation]->dialRotate(buttonPressCount, encoderClick);
     }else{
-        brightness += encoderClick * 5;
-        if(brightness < 0){
-            brightness = 0;
-        }else if(brightness > 255){
-            brightness = 255;
+        brightness = brightness * (1.0f + (encoderClick * BRIGHTNESS_SCALING));
+        if(brightness < 1.0f && encoderClick > 0){
+            brightness = 1.0f;
+        }else if(brightness > MAX_BRIGHTNESS){
+            brightness = MAX_BRIGHTNESS;
         }
     }
 }
