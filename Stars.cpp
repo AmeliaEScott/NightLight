@@ -7,17 +7,17 @@ Stars::Stars(int rows, int cols, Neopixel* strip) : Animation(rows, cols, strip)
     }
 }
 
-void Stars::animate(float t, float dt){
+void Stars::animate(long t, float dt){
 
     numStars = (int) (param2 * MAX_STARS);
-    
+
     Neopixel::IntRGB off = {0, 0, 0};
     for(int row = 0; row < rows; row++){
         for(int col = 0; col < columns; col++){
             strip->setPixelColor(row, col, off);
         }
     }
-    
+
     Neopixel::FloatHSV hsv = {param0 * 360.0f, param1, 1.0f};
     for(int i = 0; i < numStars; i++){
         if(stars[i].age > stars[i].maxAge){

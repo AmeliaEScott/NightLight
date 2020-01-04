@@ -4,6 +4,7 @@
 #include "Rainbow.h"
 #include "Static.h"
 #include "Stars.h"
+#include "Clock.h"
 
 #define LED_PIN 6
 #define COLUMNS 10
@@ -17,9 +18,8 @@
 #define POT_PIN_1 A1
 #define POT_PIN_2 A0
 
-// All button presses shorter than this amount of time are ignored, since I
-// was too lazy to add a capacitor to the physical circuit
-#define DEBOUNCE_TIME 10
+// Multiply millis() by this value to get the actual correct number of milliseconds
+static constexpr float timeScale = 1.558f;
 
 // Adjusts how much the brightness changes with each click of the dial
 #define BRIGHTNESS_SCALING 0.15f
@@ -46,29 +46,31 @@ volatile int8_t encoderPosition = 0;
 volatile int8_t encoderClick = 0;
 
 // Overall brightness of the lights, 0-255
-float brightness = 255.0f;
+float brightness = 80.0f;
 
 // Here, the animations are being set up. Is there a better way to do this? Probably
 Rainbow rainbow = Rainbow(ROWS, COLUMNS, &strip);
 Static staticLight = Static(ROWS, COLUMNS, &strip);
 Stars stars = Stars(ROWS, COLUMNS, &strip);
-#define NUM_ANIMATIONS 3
+Clock clk = Clock(ROWS, COLUMNS, &strip);
+
+#define NUM_ANIMATIONS 4
 int currentAnimation = 0;
-Animation* animations[NUM_ANIMATIONS] = {&rainbow, &staticLight, &stars};
+Animation* animations[NUM_ANIMATIONS] = {&rainbow, &staticLight, &stars, &clk};
 
 
 void setup() {
     pinMode(ENCODER_PIN_1, INPUT_PULLUP);
     pinMode(ENCODER_PIN_2, INPUT_PULLUP);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-    
+
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_1), pollEncoder, CHANGE);
     attachInterrupt(digitalPinToInterrupt(ENCODER_PIN_2), pollEncoder, CHANGE);
-    
+
     strip.begin();
     strip.show();
 
-    //Serial.begin(115200);
+    // Serial.begin(115200);
 }
 
 // The two pins of the rotary encoder output numbers in gray code.
@@ -99,7 +101,7 @@ void pollEncoder(){
 }
 
 void loop() {
-    currentTime = millis();
+    currentTime = (long) (millis() * timeScale);
     deltaTime = (currentTime - lastTime) / 1000.0f;
     lastTime = currentTime;
 
@@ -118,7 +120,7 @@ void loop() {
     float pot2 = analogRead(POT_PIN_2) / 1024.0f;
 
     animations[currentAnimation]->updateParams(pot0, pot1, pot2);
-    animations[currentAnimation]->animate(currentTime / 1000.0f, deltaTime);
+    animations[currentAnimation]->animate(currentTime, deltaTime);
     strip.setBrightness((int) brightness);
     strip.show();
 }

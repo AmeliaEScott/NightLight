@@ -11,7 +11,7 @@
 class Rainbow : public Animation {
 public:
     Rainbow(int rows, int cols, Neopixel* strip) : Animation(rows, cols, strip){}
-    void animate(float t, float dt);
+    void animate(long t, float dt);
 private:
     float rotationSpeed = 60.0f;
     float offset = 0.0f;

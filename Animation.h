@@ -12,10 +12,10 @@ public:
     Animation(int rows, int columns, Neopixel* strip);
     /**
      * Called once for every "frame" of animation.
-     * t is the amount of time that the arduino has been powered on, in seconds.
+     * t is the amount of time that the arduino has been powered on, in milliseconds.
      * dt is the change in time since the previous frame, in seconds.
      */
-    virtual void animate(float t, float dt) = 0;
+    virtual void animate(long t, float dt) = 0;
 
     void updateParams(float param0, float param1, float param2);
 protected:

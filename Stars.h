@@ -16,7 +16,7 @@
 class Stars : public Animation {
 public:
     Stars(int rows, int cols, Neopixel* strip);
-    void animate(float t, float dt);
+    void animate(long t, float dt);
 private:
     int numStars = 10;
     typedef struct Star {
