@@ -94,5 +94,3 @@ Neopixel::IntRGB Neopixel::convertToInt(Neopixel::FloatRGB in){
     out.b = (uint8_t)(255.0f * in.b);
     return out;
 }
-
-

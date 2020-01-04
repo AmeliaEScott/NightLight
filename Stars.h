@@ -3,7 +3,7 @@
 #ifndef STARS_H
 #define STARS_H
 
-#define MAX_STARS 50
+#define MAX_STARS 75
 #define MIN_DURATION 2.0f
 #define MAX_DURATION 10.0f
 
@@ -17,8 +17,6 @@ class Stars : public Animation {
 public:
     Stars(int rows, int cols, Neopixel* strip);
     void animate(float t, float dt);
-    void buttonPress(uint8_t count);
-    void dialRotate(uint8_t buttonClicks, int8_t dialClicks);
 private:
     int numStars = 10;
     typedef struct Star {
@@ -29,8 +27,6 @@ private:
     } Star;
     Star stars[MAX_STARS];
 
-    float hue = 0.0f;
-    float saturation = 0.0f;
 };
 
 #endif

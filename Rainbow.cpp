@@ -1,24 +1,20 @@
 #include "Rainbow.h"
 
+#define SPEED_SCALE 2000.0f
+#define HUE_SCALE 100.0f
+
 void Rainbow::animate(float t, float dt){
-    Neopixel::FloatHSV hsv = {0.0f, 1.0f, 1.0f};
+    Neopixel::FloatHSV hsv = {0.0f, param1, 1.0f};
     int column, row;
     if(!stopped){
-        offset += (rotationSpeed * dt);
+        offset += (param0 * SPEED_SCALE * dt);
     }
     for(column = 0; column < columns; column++){
-        hsv.h = (((float) column / (float) columns) * 360.0f) + offset;
+        
         for(row = 0; row < rows; row++){
+            float dist = sqrt(sq(row - (rows - 1) * 0.5f) + sq(column - (columns - 1) * 0.5f));
+            hsv.h = (dist * param2 * HUE_SCALE) + offset;
             strip->setPixelColor(row, column, hsv);
         }
     }
 }
-
-void Rainbow::buttonPress(uint8_t count){
-    stopped = !stopped;
-}
-
-void Rainbow::dialRotate(uint8_t buttonClicks, int8_t dialClicks){
-    rotationSpeed += dialClicks * 15.0f;
-}
-
