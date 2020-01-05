@@ -19,7 +19,7 @@
 #define POT_PIN_2 A0
 
 // Multiply millis() by this value to get the actual correct number of milliseconds
-static constexpr float timeScale = 1.558f;
+static constexpr float timeScale = 1.5426f;
 
 // Adjusts how much the brightness changes with each click of the dial
 #define BRIGHTNESS_SCALING 0.15f

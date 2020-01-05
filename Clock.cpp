@@ -20,26 +20,16 @@ void Clock::animate(long t, float dt){
     Neopixel::IntRGB rgbOn = Neopixel::convertToInt(Neopixel::hsv2rgb({param0 * 360.0f, 1.0f, 1.0f}));
     Neopixel::IntRGB rgbOff = Neopixel::convertToInt(Neopixel::hsv2rgb({param0 * 360.0f, 1.0f, 0.0f}));
 
-    long minutes = (t / (1000l * 60l));
-    long hours = (t / (1000l * 60l * 60l));
+    long minutesOffset = (long) (param2 * 60l);
+    long hoursOffset = (long) (param1 * 12l);
+    long offset = (minutesOffset * 60l * 1000l) + (hoursOffset * 60l * 60l * 1000l);
 
-    int minutesOffset = (int) (param2 * 60.0f);
-    int hoursOffset = (int) (param1 * 12.0f);
-
-    int minutesDisplay = (minutes + minutesOffset) % 60;
-    int hoursDisplay = (hours + hoursOffset) % 12 + 1;
-
-    // Serial.print("(");
-    // Serial.print(t);
-    // Serial.print(") ");
-    // Serial.print(hoursDisplay);
-    // Serial.print(":");
-    // Serial.print(minutesDisplay);
-    // Serial.println();
+    long minutes = ((t + offset) / (1000l * 60l)) % 60l;
+    long hours = ((t + offset) / (1000l * 60l * 60l)) % 12l + 1l;
 
     int digits[4] = {
-        (minutesDisplay / 10) % 10, minutesDisplay % 10,
-        (hoursDisplay / 10) % 10, hoursDisplay % 10
+        (minutes / 10) % 10, minutes % 10,
+        (hours / 10) % 10, hours % 10
     };
 
     for(int digitRow = 0; digitRow < 2; digitRow++){
